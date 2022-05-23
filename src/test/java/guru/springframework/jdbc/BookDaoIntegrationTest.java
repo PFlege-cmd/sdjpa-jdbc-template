@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.ComponentScan;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.test.context.ActiveProfiles;
 
 import guru.springframework.jdbc.dao.BookDao;
@@ -23,7 +24,6 @@ public class BookDaoIntegrationTest {
 
     @Test
     void testGetById(){
-
         Book byId = bookDao.getById(1L);
         SoftAssertions.assertSoftly(softAssertions -> {
             softAssertions.assertThat(byId).isNotNull();
@@ -88,11 +88,15 @@ public class BookDaoIntegrationTest {
         bookToSave.setIsbn("123456");
         bookToSave.setAuthorId(2L);
 
-        Book savedBook = bookDao.saveBook(bookToSave).orElseGet(null);
+        Book savedBook = bookDao.saveBook(bookToSave).orElseGet(() -> new Book());
+        Long savedBookId = savedBook.getId();
 
-        bookDao.deleteById(savedBook.getId());
-        Book deletedBook = bookDao.getById(savedBook.getId());
+        bookDao.deleteById(savedBookId);
 
-        Assertions.assertThat(deletedBook).isNull();
+        SoftAssertions.assertSoftly(
+                softAssertions -> { softAssertions.assertThat(savedBookId).isNotNull();
+                softAssertions.assertThatThrownBy(() -> bookDao.getById(savedBookId))
+                        .isInstanceOf(EmptyResultDataAccessException.class);}
+        );
     }
 }
