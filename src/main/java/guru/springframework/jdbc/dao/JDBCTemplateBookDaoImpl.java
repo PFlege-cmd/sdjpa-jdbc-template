@@ -12,29 +12,27 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementCallback;
 import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.jdbc.core.RowMapper;
-import org.springframework.stereotype.Repository;
 
 import guru.springframework.jdbc.domain.Book;
 
-@Repository
-public class BookDaoImpl implements BookDao{
+public class JDBCTemplateBookDaoImpl implements BookDao{
 
     private final JdbcTemplate jdbcTemplate;
 
-    public BookDaoImpl(JdbcTemplate jdbcTemplate){
+    public JDBCTemplateBookDaoImpl(JdbcTemplate jdbcTemplate){
         this.jdbcTemplate = jdbcTemplate;
     }
 
     @Override public List<Book> findAll() {
-        return null;
+        return jdbcTemplate.query("SELECT * from book", getBookRowMapper());
     }
 
     @Override public List<Book> findAll(int limit, int offset) {
-        return null;
+        return jdbcTemplate.query("SELECT * from book limit ? offset ?", getBookRowMapper(), limit, offset);
     }
 
     @Override public List<Book> findAll(Pageable pageable) {
-        return null;
+        return jdbcTemplate.query("SELECT * from book limit ? offset ?", getBookRowMapper(), pageable.getPageSize(), pageable.getOffset());
     }
 
     @Override

@@ -2,15 +2,20 @@ package guru.springframework.jdbc;
 
 import org.assertj.core.api.Assertions;
 import org.assertj.core.api.SoftAssertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 
 import guru.springframework.jdbc.dao.BookDao;
+import guru.springframework.jdbc.dao.JDBCTemplateBookDaoImpl;
 import guru.springframework.jdbc.domain.Book;
 
 @ActiveProfiles("local")
@@ -20,7 +25,14 @@ import guru.springframework.jdbc.domain.Book;
 public class BookDaoIntegrationTest {
 
     @Autowired
+    JdbcTemplate jdbcTemplate;
+
     BookDao bookDao;
+
+    @BeforeEach
+    void setUp(){
+        this.bookDao = new JDBCTemplateBookDaoImpl(jdbcTemplate);
+    }
 
     @Test
     void testGetById(){
@@ -29,6 +41,21 @@ public class BookDaoIntegrationTest {
             softAssertions.assertThat(byId).isNotNull();
             softAssertions.assertThat(byId.getTitle()).isNotNull();
         });
+    }
+
+    @Test
+    void findAllPage1(){
+        Assertions.assertThat(bookDao.findAll(10,0)).hasSize(10);
+    }
+
+    @Test
+    void findAllPage1_pageable(){
+        Assertions.assertThat(bookDao.findAll(PageRequest.of(0, 10))).hasSize(10);
+    }
+
+    @Test
+    void findAllPage100(){
+        Assertions.assertThat(bookDao.findAll(10, 1000)).isEmpty();
     }
 
     @Test

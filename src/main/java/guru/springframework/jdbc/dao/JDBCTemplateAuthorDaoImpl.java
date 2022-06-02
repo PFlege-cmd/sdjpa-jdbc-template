@@ -12,11 +12,11 @@ import org.springframework.stereotype.Repository;
 import guru.springframework.jdbc.domain.Author;
 
 @Repository
-public class AuthorDaoImpl implements AuthorDao {
+public class JDBCTemplateAuthorDaoImpl implements AuthorDao {
 
     private final JdbcTemplate jdbcTemplate;
 
-    public AuthorDaoImpl(JdbcTemplate jdbcTemplate){
+    public JDBCTemplateAuthorDaoImpl(JdbcTemplate jdbcTemplate){
         this.jdbcTemplate = jdbcTemplate;
     }
     @Override public Author saveAuthor(Author author) {
@@ -57,10 +57,10 @@ public class AuthorDaoImpl implements AuthorDao {
     }
 
     @Override public List<Author> findAuthorByLastNameSortByFirstName(String lastName, Pageable pageable) {
-        String sql = "SELECT * from author where last_name = ? sort by first_name "
+        String sql = "SELECT * from author where last_name = ? order by first_name "
                 + pageable.getSort().getOrderFor("first_name").getDirection() + " limit ? offset ?";
 
-        return jdbcTemplate.query(sql, getRowMapper(), pageable.getPageSize(), pageable.getOffset());
+        return jdbcTemplate.query(sql, getRowMapper(), lastName, pageable.getPageSize(), pageable.getOffset());
     }
 
     private RowMapper<Author> getRowMapper(){

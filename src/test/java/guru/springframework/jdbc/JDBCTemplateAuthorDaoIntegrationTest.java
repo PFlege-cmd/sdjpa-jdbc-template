@@ -1,9 +1,13 @@
 package guru.springframework.jdbc;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.util.List;
 import java.util.Optional;
 
 import org.assertj.core.api.Assertions;
 import org.assertj.core.api.SoftAssertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -12,25 +16,50 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 
 import guru.springframework.jdbc.dao.AuthorDao;
+import guru.springframework.jdbc.dao.JDBCTemplateAuthorDaoImpl;
 import guru.springframework.jdbc.domain.Author;
 
 @DataJpaTest
 @ActiveProfiles("local")
 @ComponentScan(basePackages = {"guru.springframework.jdbc.dao"})
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-public class AuthorDaoIntegrationTest {
-
-    @Qualifier("authorDaoImpl")
-    @Autowired AuthorDao authorDao;
+public class JDBCTemplateAuthorDaoIntegrationTest {
 
 
+    @Autowired JdbcTemplate jdbcTemplate;
+
+    private AuthorDao authorDao;
+
+    @BeforeEach
+    void setUp(){
+        this.authorDao = new JDBCTemplateAuthorDaoImpl(jdbcTemplate);
+    }
+
+    @Test
+    void testFindAuthorByLastNameOrderByFirstName(){
+        List<Author> smiths = authorDao.findAuthorByLastNameSortByFirstName("Smith",
+                PageRequest.of(0, 10, Sort.by(Sort.Order.asc("first_name"))));
+        assertThat(smiths).isNotNull();
+        assertThat(smiths.get(0).getFirstName()).isEqualTo("Ahmed");
+    }
+
+    @Test
+    void testFindAuthorByLastNameOrderByFirstName_page_2(){
+        List<Author> smiths = authorDao.findAuthorByLastNameSortByFirstName("Smith",
+                PageRequest.of(1, 10, Sort.by(Sort.Order.asc("first_name"))));
+        assertThat(smiths).isNotNull();
+        assertThat(smiths.get(0).getFirstName()).isEqualTo("Dinesh");
+    }
 
     @Test
     void testGetAuthorById(){
-        Assertions.assertThat(authorDao.getById(1L)).isNotNull();
+        assertThat(authorDao.getById(1L)).isNotNull();
     }
 
     @Test
@@ -39,9 +68,9 @@ public class AuthorDaoIntegrationTest {
 
         Assertions.assertThatThrownBy(
                 () -> authorDao.findAuthorByName("Grorg", "Lizard")).isInstanceOf(DataAccessException.class);
-        Assertions.assertThat(author.getId() == 1);
-        Assertions.assertThat(author.getFirstName()).isEqualTo("Craig");
-        Assertions.assertThat(author.getLastName()).isEqualTo("Walls");
+        assertThat(author.getId() == 1);
+        assertThat(author.getFirstName()).isEqualTo("Craig");
+        assertThat(author.getLastName()).isEqualTo("Walls");
     }
 
     @Test
@@ -52,8 +81,8 @@ public class AuthorDaoIntegrationTest {
 
         Author savedAuthor = authorDao.saveAuthor(author);
 
-        Assertions.assertThat(savedAuthor).isNotNull();
-        Assertions.assertThat(savedAuthor.getId()).isNotNull();
+        assertThat(savedAuthor).isNotNull();
+        assertThat(savedAuthor.getId()).isNotNull();
     }
 
     @Test
@@ -69,10 +98,10 @@ public class AuthorDaoIntegrationTest {
         Optional<Author> updatedAuthorOptional = authorDao.updateAuthor(savedAuthor);
         Author updatedAuthor = updatedAuthorOptional.orElse(null);
 
-        Assertions.assertThat(updatedAuthor).isNotNull();
-        Assertions.assertThat(updatedAuthor.getFirstName()).isNotEqualTo(author.getFirstName());
-        Assertions.assertThat(updatedAuthor.getLastName()).isNotEqualTo(author.getLastName());
-        Assertions.assertThat(updatedAuthor.getId()).isEqualTo(savedAuthor.getId());
+        assertThat(updatedAuthor).isNotNull();
+        assertThat(updatedAuthor.getFirstName()).isNotEqualTo(author.getFirstName());
+        assertThat(updatedAuthor.getLastName()).isNotEqualTo(author.getLastName());
+        assertThat(updatedAuthor.getId()).isEqualTo(savedAuthor.getId());
     }
 
     @Test
